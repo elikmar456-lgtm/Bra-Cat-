@@ -1,0 +1,244 @@
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BraCat | Доска объявлений</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="leaves-container" id="leavesContainer"></div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div class="login-icon">🐱</div>
+            <div class="login-title">BraCat</div>
+            <div class="login-subtitle">Введите код доступа или войдите как гость</div>
+            <div class="code-input-wrapper">
+                <input type="password" class="code-input" id="codeInput" placeholder="Введите код" maxlength="12">
+            </div>
+            <button class="btn btn-admin" onclick="loginAsAdmin()">✅ Подтвердить</button>
+            <button class="btn btn-guest" onclick="loginAsGuest()">👤 Я не админ</button>
+            <div class="error-msg" id="loginError"></div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">🐱 BraCat</div>
+            <button class="btn-logout" onclick="logout()">🚪 Выйти</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="add-product-form" id="addProductForm">
+            <div class="section-title">📦 Добавить новый товар</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>📸 Фото товара</label>
+                    <input type="file" id="productImage" accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label>🏷️ Название товара</label>
+                    <input type="text" id="productName" placeholder="Например: iPhone 15 Pro">
+                </div>
+                <div class="form-group">
+                    <label>💰 Цена (₽)</label>
+                    <input type="number" id="productPrice" placeholder="50000">
+                </div>
+                <div class="form-group">
+                    <label>📝 Категория</label>
+                    <input type="text" id="productCategory" placeholder="Электроника, Одежда...">
+                </div>
+                <div class="form-group full">
+                    <label>📋 Описание</label>
+                    <textarea id="productDesc" rows="3" placeholder="Подробное описание товара..."></textarea>
+                </div>
+                <button class="btn-submit" onclick="addProduct()">✨ Опубликовать объявление</button>
+            </div>
+        </div>
+
+        <div class="section-title">🛍️ Мои объявления</div>
+        <div class="products-grid" id="productsGrid">
+            <div class="empty-state">
+                <span>📭</span>
+                Пока нет объявлений
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-text">💬 Пишите мне в MAX на этот номер:</div>
+            <div class="footer-phone">+7 950 615 16 72</div>
+            <div class="footer-note">📱 А не звоните! 🚫📞</div>
+        </div>
+    </footer>
+
+    <script>
+        function createLeaves() {
+            const container = document.getElementById('leavesContainer');
+            const leaves = ['🍁', '🍂', '🍃', '🌿', '🍀', '🍁', '🍂', '🍃', '🌿', '🍀'];
+            
+            for (let i = 0; i < 30; i++) {
+                const leaf = document.createElement('div');
+                leaf.className = 'leaf';
+                leaf.textContent = leaves[Math.floor(Math.random() * leaves.length)];
+                leaf.style.left = Math.random() * 100 + '%';
+                leaf.style.animationDelay = Math.random() * 10 + 's';
+                leaf.style.animationDuration = (Math.random() * 10 + 8) + 's';
+                container.appendChild(leaf);
+            }
+        }
+        
+        function addNewLeaf() {
+            const container = document.getElementById('leavesContainer');
+            const leaves = ['🍁', '🍂', '🍃', '🌿', '🍀'];
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.textContent = leaves[Math.floor(Math.random() * leaves.length)];
+            leaf.style.left = Math.random() * 100 + '%';
+            leaf.style.animationDuration = (Math.random() * 10 + 8) + 's';
+            container.appendChild(leaf);
+            
+            setTimeout(() => {
+                leaf.remove();
+            }, 15000);
+        }
+        
+        createLeaves();
+        setInterval(addNewLeaf, 2000);
+
+        const ADMIN_CODE = 'klk464946';
+        let isAdmin = false;
+        let products = [];
+
+        function loadProducts() {
+            const saved = localStorage.getItem('bracat_products');
+            if (saved) products = JSON.parse(saved);
+            renderProducts();
+        }
+
+        function saveProducts() {
+            localStorage.setItem('bracat_products', JSON.stringify(products));
+        }
+
+        function loginAsAdmin() {
+            const code = document.getElementById('codeInput').value.trim();
+            const errorEl = document.getElementById('loginError');
+            if (code === ADMIN_CODE) {
+                isAdmin = true;
+                document.getElementById('loginOverlay').classList.add('hidden');
+                document.getElementById('addProductForm').classList.add('visible');
+                errorEl.textContent = '';
+                renderProducts();
+                showToast('✅ Доступ администратора открыт!');
+            } else {
+                errorEl.textContent = '❌ Неверный код доступа!';
+                document.getElementById('codeInput').style.borderColor = '#ff4757';
+                setTimeout(() => {
+                    document.getElementById('codeInput').style.borderColor = 'rgba(30, 144, 255, 0.2)';
+                }, 1500);
+            }
+        }
+
+        function loginAsGuest() {
+            isAdmin = false;
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('addProductForm').classList.remove('visible');
+            document.getElementById('loginError').textContent = '';
+            renderProducts();
+            showToast('👤 Вы вошли как гость');
+        }
+
+        function logout() {
+            isAdmin = false;
+            document.getElementById('loginOverlay').classList.remove('hidden');
+            document.getElementById('addProductForm').classList.remove('visible');
+            document.getElementById('codeInput').value = '';
+            document.getElementById('loginError').textContent = '';
+            renderProducts();
+        }
+
+        document.getElementById('codeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') loginAsAdmin();
+        });
+
+        function addProduct() {
+            if (!isAdmin) { showToast('❌ Только администратор может добавлять товары!'); return; }
+            const name = document.getElementById('productName').value.trim();
+            const price = document.getElementById('productPrice').value.trim();
+            const category = document.getElementById('productCategory').value.trim();
+            const desc = document.getElementById('productDesc').value.trim();
+            const imageInput = document.getElementById('productImage');
+            if (!name || !price) { showToast('⚠️ Название и цена обязательны!'); return; }
+
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    products.unshift({ id: Date.now(), name, price: Number(price), category: category || 'Без категории', desc: desc || '', image: e.target.result, date: new Date().toLocaleDateString('ru-RU') });
+                    saveProducts(); renderProducts(); clearForm();
+                    showToast('✅ Объявление опубликовано!');
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                products.unshift({ id: Date.now(), name, price: Number(price), category: category || 'Без категории', desc: desc || '', image: null, date: new Date().toLocaleDateString('ru-RU') });
+                saveProducts(); renderProducts(); clearForm();
+                showToast('✅ Объявление опубликовано!');
+            }
+        }
+
+        function deleteProduct(id) {
+            if (!isAdmin) { showToast('❌ Только администратор может удалять!'); return; }
+            if (confirm('Удалить это объявление?')) {
+                products = products.filter(p => p.id !== id);
+                saveProducts(); renderProducts();
+                showToast('🗑️ Объявление удалено');
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('productName').value = '';
+            document.getElementById('productPrice').value = '';
+            document.getElementById('productCategory').value = '';
+            document.getElementById('productDesc').value = '';
+            document.getElementById('productImage').value = '';
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            if (products.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><span>📭</span>Пока нет объявлений</div>';
+                return;
+            }
+            grid.innerHTML = products.map(p => `
+                <div class="product-card">
+                    ${p.image ? `<img src="${p.image}" class="product-image" alt="${p.name}">` : '<div class="product-no-image">📦</div>'}
+                    <div class="product-body">
+                        <div class="product-name">${p.name}</div>
+                        <div class="product-price">${p.price.toLocaleString('ru-RU')} ₽</div>
+                        ${p.category ? `<div style="color:#4da6ff;font-size:12px;margin-bottom:5px;">📂 ${p.category}</div>` : ''}
+                        ${p.desc ? `<div class="product-desc">${p.desc}</div>` : ''}
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="color:#5a7090;font-size:11px;">📅 ${p.date}</span>
+                            ${isAdmin ? `<button class="btn-delete" onclick="deleteProduct(${p.id})">🗑️ Удалить</button>` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.4s'; setTimeout(() => toast.remove(), 400); }, 3000);
+        }
+
+        loadProducts();
+    </script>
+</body>
+</html>
